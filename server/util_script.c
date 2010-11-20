@@ -54,7 +54,7 @@
 
 APLOG_USE_MODULE(core);
 
-static char *http2env(apr_pool_t *a, const char *w)
+static char *http2env(apr_pool_t *a, const char *w, int sloppy)
 {
     char *res = (char *)apr_palloc(a, sizeof("HTTP_") + strlen(w));
     char *cp = res;
@@ -71,6 +71,9 @@ static char *http2env(apr_pool_t *a, const char *w)
             *cp++ = apr_toupper(c);
         }
         else if (c == '-') {
+            *cp++ = '_';
+        }
+        else if (sloppy) {
             *cp++ = '_';
         }
         else {
@@ -131,6 +134,7 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
     const char *host;
     const apr_array_header_t *hdrs_arr = apr_table_elts(r->headers_in);
     const apr_table_entry_t *hdrs = (const apr_table_entry_t *) hdrs_arr->elts;
+    int sloppy;
     int i;
     apr_port_t rport;
 
@@ -149,7 +153,13 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
     /* First, add environment vars from headers... this is as per
      * CGI specs, though other sorts of scripting interfaces see
      * the same vars...
+     * 
+     * A minimum of validation is applied and headers which blatantly
+     * violate the RFC are silently dropped.  To map these as well,
+     * the environment variable map-invalid-headers can be set.
      */
+
+    sloppy = apr_table_get(r->subprocess_env, "map-invalid-headers") ? 1 : 0;
 
     for (i = 0; i < hdrs_arr->nelts; ++i) {
         if (!hdrs[i].key) {
@@ -178,7 +188,7 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
             continue;
         }
 #endif
-        else if ((env_temp = http2env(r->pool, hdrs[i].key)) != NULL) {
+        else if ((env_temp = http2env(r->pool, hdrs[i].key, sloppy)) != NULL) {
             apr_table_addn(e, env_temp, hdrs[i].val);
         }
     }
