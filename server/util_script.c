@@ -85,6 +85,14 @@ static char *http2env(apr_pool_t *a, const char *w, int sloppy)
     return res;
 }
 
+static void env2env(apr_table_t *e, const char *w)
+{
+    char *t = getenv(w);
+    if (t) {
+        apr_table_addn(e, w, t);
+    }
+}
+
 AP_DECLARE(char **) ap_create_environment(apr_pool_t *p, apr_table_t *t)
 {
     const apr_array_header_t *env_arr = apr_table_elts(t);
@@ -201,55 +209,27 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
     apr_table_addn(e, "PATH", apr_pstrdup(r->pool, env_temp));
 
 #if defined(WIN32)
-    if (env_temp = getenv("SystemRoot")) {
-        apr_table_addn(e, "SystemRoot", env_temp);
-    }
-    if (env_temp = getenv("COMSPEC")) {
-        apr_table_addn(e, "COMSPEC", env_temp);
-    }
-    if (env_temp = getenv("PATHEXT")) {
-        apr_table_addn(e, "PATHEXT", env_temp);
-    }
-    if (env_temp = getenv("WINDIR")) {
-        apr_table_addn(e, "WINDIR", env_temp);
-    }
+    env2env(e, "SystemRoot");
+    env2env(e, "COMSPEC");
+    env2env(e, "PATHEXT");
+    env2env(e, "WINDIR");
 #elif defined(OS2)
-    if ((env_temp = getenv("COMSPEC")) != NULL) {
-        apr_table_addn(e, "COMSPEC", env_temp);
-    }
-    if ((env_temp = getenv("ETC")) != NULL) {
-        apr_table_addn(e, "ETC", env_temp);
-    }
-    if ((env_temp = getenv("DPATH")) != NULL) {
-        apr_table_addn(e, "DPATH", env_temp);
-    }
-    if ((env_temp = getenv("PERLLIB_PREFIX")) != NULL) {
-        apr_table_addn(e, "PERLLIB_PREFIX", env_temp);
-    }
+    env2env(e, "COMSPEC");
+    env2env(e, "ETC");
+    env2env(e, "DPATH");
+    env2env(e, "PERLLIB_PREFIX");
 #elif defined(BEOS)
-    if ((env_temp = getenv("LIBRARY_PATH")) != NULL) {
-        apr_table_addn(e, "LIBRARY_PATH", env_temp);
-    }
+    env2env(e, "LIBRARY_PATH");
 #elif defined(DARWIN)
-    if ((env_temp = getenv("DYLD_LIBRARY_PATH")) != NULL) {
-        apr_table_addn(e, "DYLD_LIBRARY_PATH", env_temp);
-    }
+    env2env(e, "DYLD_LIBRARY_PATH");
 #elif defined(_AIX)
-    if ((env_temp = getenv("LIBPATH")) != NULL) {
-        apr_table_addn(e, "LIBPATH", env_temp);
-    }
+    env2env(e, "LIBPATH");
 #elif defined(__HPUX__)
     /* HPUX PARISC 2.0W knows both, otherwise redundancy is harmless */
-    if ((env_temp = getenv("SHLIB_PATH")) != NULL) {
-        apr_table_addn(e, "SHLIB_PATH", env_temp);
-    }
-    if ((env_temp = getenv("LD_LIBRARY_PATH")) != NULL) {
-        apr_table_addn(e, "LD_LIBRARY_PATH", env_temp);
-    }
+    env2env(e, "SHLIB_PATH");
+    env2env(e, "LD_LIBRARY_PATH");
 #else /* Some Unix */
-    if ((env_temp = getenv("LD_LIBRARY_PATH")) != NULL) {
-        apr_table_addn(e, "LD_LIBRARY_PATH", env_temp);
-    }
+    env2env(e, "LD_LIBRARY_PATH");
 #endif
 
     apr_table_addn(e, "SERVER_SIGNATURE", ap_psignature("", r));
