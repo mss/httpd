@@ -54,42 +54,6 @@
 
 APLOG_USE_MODULE(core);
 
-static void http2env(apr_pool_t *p, apr_table_t *e, const char *k,
-                     const char *v, int s)
-{
-    char *nk = (char *)apr_palloc(p, sizeof("HTTP_") + strlen(k));
-    char *cp = nk;
-    char c;
-
-    *cp++ = 'H';
-    *cp++ = 'T';
-    *cp++ = 'T';
-    *cp++ = 'P';
-    *cp++ = '_';
-
-    while ((c = *k++) != 0) {
-        if (apr_isalnum(c)) {
-            *cp++ = apr_toupper(c);
-        }
-        else if ((c == '-') || s) {
-            *cp++ = '_';
-        }
-        else {
-            return;
-        }
-    }
-    *cp = 0;
-    
-    apr_table_addn(e, nk, v);
-}
-
-static void env2env(apr_table_t *e, const char *k)
-{
-    char *v = getenv(k);
-    if (v) {
-        apr_table_addn(e, k, v);
-    }
-}
 
 AP_DECLARE(char **) ap_create_environment(apr_pool_t *p, apr_table_t *t)
 {
@@ -130,6 +94,43 @@ AP_DECLARE(char **) ap_create_environment(apr_pool_t *p, apr_table_t *t)
 
     env[j] = NULL;
     return env;
+}
+
+static void http2env(apr_pool_t *p, apr_table_t *e, const char *k,
+                     const char *v, int s)
+{
+    char *nk = (char *)apr_palloc(p, sizeof("HTTP_") + strlen(k));
+    char *cp = nk;
+    char c;
+
+    *cp++ = 'H';
+    *cp++ = 'T';
+    *cp++ = 'T';
+    *cp++ = 'P';
+    *cp++ = '_';
+
+    while ((c = *k++) != 0) {
+        if (apr_isalnum(c)) {
+            *cp++ = apr_toupper(c);
+        }
+        else if ((c == '-') || s) {
+            *cp++ = '_';
+        }
+        else {
+            return;
+        }
+    }
+    *cp = 0;
+    
+    apr_table_addn(e, nk, v);
+}
+
+static void env2env(apr_table_t *e, const char *k)
+{
+    char *v = getenv(k);
+    if (v) {
+        apr_table_addn(e, k, v);
+    }
 }
 
 AP_DECLARE(void) ap_add_common_vars(request_rec *r)
