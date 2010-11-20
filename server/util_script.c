@@ -54,10 +54,11 @@
 
 APLOG_USE_MODULE(core);
 
-static char *http2env(apr_pool_t *a, const char *w, int sloppy)
+static void http2env(apr_pool_t *p, apr_table_t *e, const char *k,
+                     const char *v, int s)
 {
-    char *res = (char *)apr_palloc(a, sizeof("HTTP_") + strlen(w));
-    char *cp = res;
+    char *nk = (char *)apr_palloc(p, sizeof("HTTP_") + strlen(k));
+    char *cp = nk;
     char c;
 
     *cp++ = 'H';
@@ -66,30 +67,27 @@ static char *http2env(apr_pool_t *a, const char *w, int sloppy)
     *cp++ = 'P';
     *cp++ = '_';
 
-    while ((c = *w++) != 0) {
+    while ((c = *k++) != 0) {
         if (apr_isalnum(c)) {
             *cp++ = apr_toupper(c);
         }
-        else if (c == '-') {
-            *cp++ = '_';
-        }
-        else if (sloppy) {
+        else if ((c == '-') || s) {
             *cp++ = '_';
         }
         else {
-            return NULL;
+            return;
         }
     }
     *cp = 0;
-
-    return res;
+    
+    apr_table_addn(e, nk, v);
 }
 
-static void env2env(apr_table_t *e, const char *w)
+static void env2env(apr_table_t *e, const char *k)
 {
-    char *t = getenv(w);
-    if (t) {
-        apr_table_addn(e, w, t);
+    char *v = getenv(k);
+    if (v) {
+        apr_table_addn(e, k, v);
     }
 }
 
@@ -194,8 +192,8 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
                  && !apr_table_get(r->subprocess_env, "map-authorization-headers")) {
             continue;
         }
-        else if ((env_temp = http2env(r->pool, hdrs[i].key, sloppy)) != NULL) {
-            apr_table_addn(e, env_temp, hdrs[i].val);
+        else {
+            http2env(r->pool, e, hdrs[i].key, hdrs[i].val, sloppy);
         }
     }
 
