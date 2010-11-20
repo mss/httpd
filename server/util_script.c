@@ -136,14 +136,11 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
     apr_table_t *e;
     server_rec *s = r->server;
     conn_rec *c = r->connection;
-    const char *rem_logname;
     const char *env_temp;
-    const char *host;
     const apr_array_header_t *hdrs_arr = apr_table_elts(r->headers_in);
     const apr_table_entry_t *hdrs = (const apr_table_entry_t *) hdrs_arr->elts;
     int sloppy;
     int i;
-    apr_port_t rport;
 
     /* use a temporary apr_table_t which we'll overlap onto
      * r->subprocess_env later
@@ -239,17 +236,17 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
     apr_table_addn(e, "SERVER_ADDR", r->connection->local_ip);  /* Apache */
     apr_table_addn(e, "SERVER_PORT",
                   apr_psprintf(r->pool, "%u", ap_get_server_port(r)));
-    host = ap_get_remote_host(c, r->per_dir_config, REMOTE_HOST, NULL);
-    if (host) {
-        apr_table_addn(e, "REMOTE_HOST", host);
+    env_temp = ap_get_remote_host(c, r->per_dir_config, REMOTE_HOST, NULL);
+    if (env_temp) {
+        apr_table_addn(e, "REMOTE_HOST", env_temp);
     }
     apr_table_addn(e, "REMOTE_ADDR", c->remote_ip);
     apr_table_addn(e, "DOCUMENT_ROOT", ap_document_root(r));    /* Apache */
     apr_table_addn(e, "SERVER_ADMIN", s->server_admin); /* Apache */
     apr_table_addn(e, "SCRIPT_FILENAME", r->filename);  /* Apache */
 
-    rport = c->remote_addr->port;
-    apr_table_addn(e, "REMOTE_PORT", apr_itoa(r->pool, rport));
+    env_temp = apr_itoa(r->pool, c->remote_addr->port);
+    apr_table_addn(e, "REMOTE_PORT", env_temp);
 
     if (r->user) {
         apr_table_addn(e, "REMOTE_USER", r->user);
@@ -268,9 +265,9 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
     if (r->ap_auth_type) {
         apr_table_addn(e, "AUTH_TYPE", r->ap_auth_type);
     }
-    rem_logname = ap_get_remote_logname(r);
-    if (rem_logname) {
-        apr_table_addn(e, "REMOTE_IDENT", apr_pstrdup(r->pool, rem_logname));
+    env_temp = ap_get_remote_logname(r);
+    if (env_temp) {
+        apr_table_addn(e, "REMOTE_IDENT", apr_pstrdup(r->pool, env_temp));
     }
 
     /* Apache custom error responses. If we have redirected set two new vars */
