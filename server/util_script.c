@@ -114,6 +114,9 @@ AP_DECLARE(char **) ap_create_environment(apr_pool_t *p, apr_table_t *t)
             continue;
         }
         env[j] = apr_pstrcat(p, elts[i].key, "=", elts[i].val, NULL);
+        /* Names of environment variables must contain only characters, 
+         * numbers and underscores and must not begin with a number.
+         */
         whack = env[j];
         if (apr_isdigit(*whack)) {
             *whack++ = '_';
