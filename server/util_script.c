@@ -178,16 +178,15 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
             apr_table_addn(e, "CONTENT_LENGTH", hdrs[i].val);
         }
         /*
-         * You really don't want to disable this check, since it leaves you
-         * wide open to CGIs stealing passwords and people viewing them
-         * in the environment with "ps -e".  But, if you must...
+         * Disabling this check leaves you wide open to CGIs stealing 
+         * passwords and people viewing them in the environment with 
+         * "ps -e".  But, if you must...
          */
-#ifndef SECURITY_HOLE_PASS_AUTHORIZATION
-        else if (!strcasecmp(hdrs[i].key, "Authorization")
-                 || !strcasecmp(hdrs[i].key, "Proxy-Authorization")) {
+        else if ((!strcasecmp(hdrs[i].key, "Authorization")
+                 || !strcasecmp(hdrs[i].key, "Proxy-Authorization"))
+                 && !apr_table_get(r->subprocess_env, "map-authorization-headers")) {
             continue;
         }
-#endif
         else if ((env_temp = http2env(r->pool, hdrs[i].key, sloppy)) != NULL) {
             apr_table_addn(e, env_temp, hdrs[i].val);
         }
