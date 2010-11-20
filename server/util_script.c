@@ -129,7 +129,6 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
     server_rec *s = r->server;
     conn_rec *c = r->connection;
     const char *rem_logname;
-    const char *env_path;
     const char *env_temp;
     const char *host;
     const apr_array_header_t *hdrs_arr = apr_table_elts(r->headers_in);
@@ -192,14 +191,14 @@ AP_DECLARE(void) ap_add_common_vars(request_rec *r)
         }
     }
 
-    env_path = apr_table_get(r->subprocess_env, "PATH");
-    if (env_path == NULL) {
-        env_path = getenv("PATH");
+    env_temp = apr_table_get(r->subprocess_env, "PATH");
+    if (env_temp == NULL) {
+        env_temp = getenv("PATH");
     }
-    if (env_path == NULL) {
-        env_path = DEFAULT_PATH;
+    if (env_temp == NULL) {
+        env_temp = DEFAULT_PATH;
     }
-    apr_table_addn(e, "PATH", apr_pstrdup(r->pool, env_path));
+    apr_table_addn(e, "PATH", apr_pstrdup(r->pool, env_temp));
 
 #if defined(WIN32)
     if (env_temp = getenv("SystemRoot")) {
